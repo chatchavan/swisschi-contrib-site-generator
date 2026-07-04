@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DOI Resolver</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  p.subtitle { color: #555; margin-top: 0; }
+  label { display: block; font-weight: 600; margin: 1rem 0 0.25rem; }
+  label.inline { display: flex; align-items: center; gap: 0.5rem; font-weight: normal; margin: 0.5rem 0 0; cursor: pointer; }
+  input[type=text], input[type=email], textarea { width: 100%; padding: 0.4rem 0.5rem; font-size: 1rem; box-sizing: border-box; border: 1px solid #bbb; border-radius: 4px; font-family: inherit; }
+  textarea { font-family: ui-monospace, monospace; resize: vertical; }
+  input:disabled { background: #f0f0f0; color: #aaa; }
+  input[type=file] { display: block; margin-top: 0.25rem; }
+  input[type=checkbox] { width: 1.1em; height: 1.1em; cursor: pointer; }
+  .hint { font-size: 0.85rem; color: #666; margin: 0.15rem 0 0; }
+  .csv-status { font-size: 0.9rem; color: #1a7a3a; margin-top: 0.35rem; }
+  .btn-group { display: flex; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap; }
+  button { padding: 0.5rem 1.1rem; font-size: 1rem; border: none; border-radius: 4px; cursor: pointer; }
+  .btn-primary { background: #1a6fbf; color: #fff; }
+  .btn-secondary { background: #eee; color: #333; border: 1px solid #bbb; }
+  .btn-primary:hover { background: #155da0; }
+  .btn-secondary:disabled { opacity: 0.45; cursor: not-allowed; }
+  .error { background: #fee; border: 1px solid #e99; padding: 0.75rem; border-radius: 4px; margin: 1rem 0; color: #900; }
+  .test-results { background: #f4f8ff; border: 1px solid #b3d0f5; border-radius: 6px; padding: 1rem; margin: 1.5rem 0; }
+  .test-results h2 { font-size: 1.1rem; margin-top: 0; }
+  .test-record { margin: 0.5rem 0; padding: 0.5rem; background: #fff; border: 1px solid #ddd; border-radius: 4px; }
+  .test-record.miss { border-color: #e0b04a; background: #fffaf0; }
+  .test-record .doi { font-family: monospace; font-size: 0.85rem; color: #555; }
+  .test-record .title { font-weight: 600; }
+  .test-record .meta { font-size: 0.85rem; color: #444; }
+  fieldset { border: 1px solid #ddd; border-radius: 6px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+  legend { font-weight: 700; padding: 0 0.5rem; }
+  details { margin-top: 1rem; }
+  summary { cursor: pointer; color: #555; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<h1>DOI Resolver</h1>
+<p class="subtitle">Resolve DOI links for a paper CSV by searching CrossRef by title.</p>
+
+{% if error %}
+<div class="error">{{ error }}</div>
+{% endif %}
+
+<form method="post" action="/process" enctype="multipart/form-data" id="main-form">
+  <fieldset>
+    <legend>Papers CSV</legend>
+    <label>CSV file{% if csv_name %} (re-upload to replace){% endif %}
+      <input type="file" name="csv_file" accept=".csv" {% if not csv_name %}required{% endif %}>
+    </label>
+    {% if csv_name %}
+    <div class="csv-status">✓ Using uploaded file: <strong>{{ csv_name }}</strong></div>
+    {% endif %}
+  </fieldset>
+
+  <fieldset>
+    <legend>Settings</legend>
+    <label>DOI prefixes (one per line)
+      <textarea name="prefixes" rows="3" required>{{ prefixes_text }}</textarea>
+      <span class="hint">A paper matches if its DOI starts with any of these prefixes.</span>
+    </label>
+
+    <label class="inline">
+      <input type="checkbox" name="cache_only" id="cache_only" value="1" {% if cache_only %}checked{% endif %}>
+      Use cache only — match against the JSON cache without searching CrossRef
+    </label>
+
+    <div id="email-row">
+      <label>Contact email (sent to CrossRef API)
+        <input type="email" name="email" id="email" value="{{ email or '' }}">
+      </label>
+    </div>
+  </fieldset>
+
+  <details>
+    <summary>Optional: upload existing CrossRef cache (JSON) to skip already-resolved titles</summary>
+    <label style="margin-top:0.5rem">JSON cache file
+      <input type="file" name="cache_file" accept=".json">
+    </label>
+  </details>
+
+  <div class="btn-group">
+    <button type="button" class="btn-secondary" id="test-btn" onclick="doTestFetch()">Test search (first 3 rows)</button>
+    <button type="submit" class="btn-primary">Run full batch</button>
+  </div>
+</form>
+
+{% if test_records %}
+<div class="test-results">
+  <h2>Test search results (first 3 CSV rows)</h2>
+  {% for rec in test_records %}
+  <div class="test-record {% if not rec.matched %}miss{% endif %}">
+    <div class="title">{{ '✓' if rec.matched else '✗' }} {{ rec.csv_title }}</div>
+    {% if rec.matched %}
+      <div class="doi">→ {{ rec.doi }} (similarity {{ rec.score }})</div>
+      <div class="meta">{{ rec.title }}</div>
+    {% else %}
+      <div class="meta">No confident match — {{ rec.reason }}</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  <p style="margin-bottom:0;font-size:0.9rem;color:#555">Looks good? Click <strong>Run full batch</strong> above.</p>
+</div>
+{% endif %}
+
+<script>
+const cacheOnlyBox = document.getElementById('cache_only');
+const emailRow = document.getElementById('email-row');
+const emailInput = document.getElementById('email');
+const testBtn = document.getElementById('test-btn');
+
+function updateCacheOnly() {
+  const co = cacheOnlyBox.checked;
+  emailRow.style.opacity = co ? '0.4' : '1';
+  emailInput.disabled = co;
+  testBtn.disabled = co;
+}
+cacheOnlyBox.addEventListener('change', updateCacheOnly);
+updateCacheOnly();
+
+function doTestFetch() {
+  if (cacheOnlyBox.checked) return;
+  const form = document.getElementById('main-form');
+  const action = form.action;
+  form.action = '/test-fetch';
+  form.submit();
+  form.action = action;
+}
+</script>
+</body>
+</html>

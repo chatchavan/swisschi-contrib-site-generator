@@ -1,0 +1,3 @@
+# Ignore JSON files downloadable from the programs.sigchi.org
+CHI_2026_program.json
+DIS_2026_program.json

@@ -1,0 +1,6 @@
+# For OS X
+.DS_Store
+
+
+# Generator test artifact
+test-single.html
