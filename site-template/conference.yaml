@@ -1,0 +1,40 @@
+# ============================================================
+# Per-conference configuration for the SwissCHI promo site.
+# Edit these values for each new conference, then rebuild.
+# All values are baked in at build time (no runtime fetch).
+# ============================================================
+
+# --- Data source ---
+# Two options:
+#   1. Embedded CSV (default): leave sheetCsvUrl empty and ship the curated CSV
+#      as public/<dataFile>. Self-contained, no Google Sheet needed.
+#   2. Published Google Sheet CSV URL (File > Share > Publish to web, CSV).
+# If sheetCsvUrl is non-empty it takes precedence over the embedded file.
+sheetCsvUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSnb_tSBK7JTyvJ6Z_uINUjdPuPW2JCi_IxOJm3_BkMdxbwUM0Ql_YpG7UK0hkVwD0UkGSAbo5phKrk/pub?gid=469446089&single=true&output=csv'
+# Embedded CSV filename inside public/ (used when sheetCsvUrl is empty).
+dataFile: 'swiss_papers.csv'
+
+# --- Page metadata ---
+pageTitle: 'Swiss Contributions at CHI 2026'
+# Path to favicon inside the public/ folder (relative to site root)
+faviconPath: '/swisschi.svg'
+
+# --- Header ---
+headerTitle: '🇨🇭 Swiss Contributions at CHI 2026'
+headerSubtitle: 'Barcelona, April 13 - 17, 2026'
+location: 'Barcelona, Spain'
+
+# --- Social / org links ---
+chapterUrl: 'https://swisschi.acm.org/'
+linkedinUrl: 'https://www.linkedin.com/company/swisschi/'
+
+# --- Footer ---
+footerCredit: 'Data from CHI 2026 Program'
+
+# --- Build / deploy ---
+# GitHub Pages base path.  Use '/' for a root deployment or
+# './'' for relative paths.  For a project page (e.g.
+# https://swisschi-chi26.github.io/) use '/'.
+# TODO(confirm): Verify the correct basePath for each new deployment.
+#   Current value reproduces the CHI 2026 site (root of swisschi-chi26.github.io).
+basePath: './'
