@@ -62,15 +62,16 @@
     <button id="s1-download" disabled>Download swiss_papers.csv</button>
   </section>
 
+  <!-- Stage 2 -->
   <section class="stage">
     <h2>② (Optional) Replacing program URL with DOI</h2>
     <p class="sub">After the conference, instead of linking to the program page, you may want to link directly to the DOI link of each paper.
       This step needs to be done on a separate Python app that will query DOI of each paper in the CSV. 
-      See the app in the folder <code>doi-resolver</code>.
+      See the app in the folder <a hrefp="https://github.com/swisschi/swisschi-contrib-site-generator/tree/main/doi-resolver"><code>doi-resolver</code></a>.
     </p>
   </section>
 
-  <!-- Stage 2 -->
+  <!-- Stage 3 -->
   <section class="stage">
     <h2>③ Build deployable site ← curated CSV</h2>
     <p class="sub">Drop your (curated) CSV and fill the conference details. You get a ZIP of a deployable site
@@ -112,6 +113,9 @@
 
     <button id="s2-build" disabled>Build</button>
   </section>
+
+  <!-- Footer -->
+  <footer class="footer">Vibe-Coded by Claude and <a href="https://chatw.ch" target="_blank" rel="noopener noreferrer">Chat Wacharamanotham</a> based on works by <a href="https://peachlab.inf.ethz.ch/" target="_blank" rel="noopener noreferrer">April Wang</a>.</footer>
 
 </main>
 
