@@ -1,0 +1,10 @@
+{
+  "name": "swisschi-wrangler",
+  "version": "0.1.0",
+  "description": "Browser/Node ES module that extracts Swiss-affiliated papers from a SIGCHI program JSON.",
+  "type": "module",
+  "main": "wrangler.js",
+  "scripts": {
+    "test": "node test/wrangler.test.mjs"
+  }
+}
