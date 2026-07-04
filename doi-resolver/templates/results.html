@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DOI Resolver — Results</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 1100px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; }
+  a.back { color: #1a6fbf; text-decoration: none; font-size: 0.9rem; }
+  a.back:hover { text-decoration: underline; }
+  .summary { display: flex; gap: 1.5rem; flex-wrap: wrap; margin: 1rem 0; }
+  .stat { background: #f0f4ff; border: 1px solid #c4d6f5; border-radius: 6px; padding: 0.6rem 1rem; min-width: 120px; text-align: center; }
+  .stat .num { font-size: 1.8rem; font-weight: 700; color: #1a6fbf; }
+  .stat .label { font-size: 0.8rem; color: #555; }
+  .btn-group { display: flex; gap: 0.75rem; margin: 1rem 0 1.5rem; flex-wrap: wrap; align-items: center; }
+  .btn { display: inline-block; padding: 0.5rem 1.1rem; font-size: 0.95rem; border-radius: 4px; text-decoration: none; cursor: pointer; border: none; }
+  .btn-primary { background: #1a6fbf; color: #fff; }
+  .btn-secondary { background: #eee; color: #333; border: 1px solid #bbb; }
+  .btn:hover { opacity: 0.88; }
+  .note { font-size: 0.85rem; color: #666; }
+
+  .table-wrap { overflow-x: auto; margin-top: 0.5rem; border: 1px solid #e0e0e0; border-radius: 6px; }
+  table { border-collapse: collapse; font-size: 0.85rem; width: 100%; }
+  th { background: #1a6fbf; color: #fff; padding: 0.5rem 0.6rem; text-align: left; white-space: nowrap; position: sticky; top: 0; }
+  td { padding: 0.4rem 0.6rem; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr.unmatched td { background: #fff8e1; }
+  tr.unmatched td:first-child::before { content: "⚠ "; color: #b05000; }
+  .link-input { width: 100%; min-width: 240px; box-sizing: border-box; padding: 0.3rem 0.4rem; font-size: 0.82rem; font-family: ui-monospace, monospace; border: 1px solid #cfcfcf; border-radius: 3px; }
+  tr.unmatched .link-input { border-color: #e0b04a; background: #fffdf7; }
+  td.title-cell { max-width: 380px; }
+  td.authors-cell { max-width: 320px; font-size: 0.8rem; color: #444; }
+  .type-cell { white-space: nowrap; }
+</style>
+</head>
+<body>
+<a class="back" href="/">← New run</a>
+<h1>Results</h1>
+
+<div class="summary">
+  <div class="stat"><div class="num">{{ row_count }}</div><div class="label">CSV rows</div></div>
+  <div class="stat"><div class="num">{{ cached_count }}</div><div class="label">from cache</div></div>
+  <div class="stat"><div class="num">{{ fetched_count }}</div><div class="label">searched CrossRef</div></div>
+  <div class="stat"><div class="num" style="color:#2a9a4a">{{ matched | length }}</div><div class="label">matched</div></div>
+  <div class="stat"><div class="num" style="color:{% if unmatched %}#b05000{% else %}#2a9a4a{% endif %}">{{ unmatched | length }}</div><div class="label">unmatched</div></div>
+</div>
+
+<div class="btn-group">
+  <button class="btn btn-primary" id="download-btn">Download CSV (with edits)</button>
+  <a class="btn btn-secondary" href="/download/crossref_cache.json">Download CrossRef JSON</a>
+  <span class="note">Unmatched rows are highlighted. Edit the Link field to set a DOI manually, then download.</span>
+</div>
+
+<div class="table-wrap">
+<table id="results-table">
+  <thead>
+    <tr>
+      <th>Link</th>
+      <th>Title</th>
+      <th>Type</th>
+      <th>All Authors</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in table.rows %}
+    <tr class="{% if not row.matched %}unmatched{% endif %}" data-index="{{ row.index }}">
+      <td><input class="link-input" type="text" value="{{ row.Link }}"></td>
+      <td class="title-cell">{{ row.Title }}</td>
+      <td class="type-cell">{{ row.Type }}</td>
+      <td class="authors-cell">{{ row['All Authors'] }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<script>
+document.getElementById('download-btn').addEventListener('click', async () => {
+  const edits = {};
+  document.querySelectorAll('#results-table tbody tr').forEach(tr => {
+    const idx = tr.getAttribute('data-index');
+    const input = tr.querySelector('.link-input');
+    edits[idx] = input.value;
+  });
+  const resp = await fetch('/download-edited', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(edits),
+  });
+  if (!resp.ok) { alert('Download failed: ' + resp.status); return; }
+  const blob = await resp.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'papers_with_dois.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>

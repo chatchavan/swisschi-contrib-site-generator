@@ -1,0 +1,13 @@
+# For OS X
+.DS_Store
+
+# Python
+doi_resolver/__pycache__
+.venv
+example
+
+# Runtime artifacts
+crossref_cache.json
+crossref_cache copy.json
+output.csv
+*.tmp
