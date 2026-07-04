@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SwissCHI Site Generator</title>
+<style>
+  :root { --red: #d52b1e; --ink: #1a1a1a; --muted: #6b7280; --line: #e5e7eb; --bg: #f7f7f8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         color: var(--ink); background: var(--bg); line-height: 1.5; }
+  header { background: #fff; border-bottom: 1px solid var(--line); padding: 24px 20px; }
+  header h1 { margin: 0; font-size: 1.4rem; }
+  header p { margin: 6px 0 0; color: var(--muted); }
+  main { max-width: 920px; margin: 0 auto; padding: 24px 20px 60px; }
+  .stage { background: #fff; border: 1px solid var(--line); border-radius: 12px;
+           padding: 22px; margin-bottom: 24px; }
+  .stage h2 { margin: 0 0 4px; font-size: 1.15rem; }
+  .stage .sub { color: var(--muted); margin: 0 0 16px; font-size: .92rem; }
+  .drop { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 28px; text-align: center;
+          cursor: pointer; transition: .15s; color: var(--muted); }
+  .drop:hover, .drop.drag { border-color: var(--red); background: #fff5f5; color: var(--ink); }
+  .drop input { display: none; }
+  .status { margin: 14px 0 0; font-size: .92rem; min-height: 1.2em; }
+  .status.ok { color: #15803d; }
+  .status.err { color: var(--red); }
+  .muted { color: var(--muted); font-size: .88rem; }
+  button { background: var(--red); color: #fff; border: 0; border-radius: 8px;
+           padding: 10px 18px; font-size: .95rem; cursor: pointer; margin-top: 14px; }
+  button:disabled { background: #cbd5e1; cursor: not-allowed; }
+  table.preview { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: .85rem; }
+  table.preview th, table.preview td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line);
+           vertical-align: top; }
+  table.preview th { color: var(--muted); font-weight: 600; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; margin-top: 16px; }
+  .grid label { display: flex; flex-direction: column; font-size: .82rem; color: var(--muted); gap: 4px; }
+  .grid label.full { grid-column: 1 / -1; }
+  .grid input { padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: .9rem; color: var(--ink); }
+  details { margin-top: 8px; }
+  summary { cursor: pointer; color: var(--muted); font-size: .88rem; }
+  code { background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-size: .85em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🇨🇭 SwissCHI Site Generator</h1>
+  <p>Turn a SIGCHI program JSON into a deployable Swiss-contributions site. The two stages are independent.</p>
+</header>
+<main>
+
+  <!-- Stage 1 -->
+  <section class="stage">
+    <h2>① Extract papers → CSV</h2>
+    <p class="sub">Drop a SIGCHI program JSON (the “Get Conference data JSON” download). You get a
+      <code>swiss_papers.csv</code> to curate manually or with collaborators (awards, fixes, extra papers, messages).</p>
+    <div class="drop" id="s1-drop">
+      <strong>Drop program JSON here</strong><br />or click to choose a file
+      <input type="file" />
+    </div>
+    <div class="status" id="s1-status"></div>
+    <div id="s1-preview"></div>
+    <button id="s1-download" disabled>Download swiss_papers.csv</button>
+  </section>
+
+  <section class="stage">
+    <h2>② (Optional) Replacing program URL with DOI</h2>
+    <p class="sub">After the conference, instead of linking to the program page, you may want to link directly to the DOI link of each paper.
+      This step needs to be done on a separate Python app that will query DOI of each paper in the CSV. 
+      See the app in the folder <code>doi-resolver</code>.
+    </p>
+  </section>
+
+  <!-- Stage 2 -->
+  <section class="stage">
+    <h2>③ Build deployable site ← curated CSV</h2>
+    <p class="sub">Drop your (curated) CSV and fill the conference details. You get a ZIP of a deployable site
+      with the CSV embedded — unzip, then <code>npm install &amp;&amp; npm run deploy</code>.</p>
+    <div class="drop" id="s2-drop">
+      <strong>Drop curated CSV here</strong><br />or click to choose a file
+      <input type="file" />
+    </div>
+    <div class="status" id="s2-status"></div>
+    <div id="s2-preview"></div>
+
+    <div class="grid">
+      <label class="full">Deploy URL (sets base path &amp; homepage)
+        <input id="cfg-deployUrl" placeholder="swisschi-dis26.github.io" /></label>
+      <label>Page title<input id="cfg-pageTitle" /></label>
+      <label>Header title<input id="cfg-headerTitle" /></label>
+      <label>Header subtitle (dates)<input id="cfg-headerSubtitle" /></label>
+      <label>Location<input id="cfg-location" /></label>
+      <label>Chapter URL<input id="cfg-chapterUrl" /></label>
+      <label>LinkedIn URL<input id="cfg-linkedinUrl" /></label>
+      <label>Footer credit<input id="cfg-footerCredit" /></label>
+    </div>
+    <details>
+      <summary>Advanced: use a published Google Sheet instead of the embedded CSV</summary>
+      <div class="grid">
+        <label class="full">Google Sheet CSV URL (leave empty to embed the dropped CSV)
+          <input id="cfg-sheetCsvUrl" placeholder="https://docs.google.com/…/pub?output=csv" /></label>
+      </div>
+    </details>
+
+    <div class="grid">
+      <label class="full">Output format
+        <span style="display:flex;gap:16px;color:var(--ink);font-size:.9rem;margin-top:2px">
+          <label style="flex-direction:row;align-items:center;gap:6px"><input type="radio" name="s2-output" value="single" checked/> Single static HTML file</label>
+          <label style="flex-direction:row;align-items:center;gap:6px"><input type="radio" name="s2-output" value="zip"  /> Deployable site (ZIP)</label>
+        </span>
+      </label>
+    </div>
+
+    <button id="s2-build" disabled>Build</button>
+  </section>
+
+</main>
+
+<script>
+/*__ZIP__*/
+/*__WRANGLER__*/
+/*__SITE_TEMPLATE__*/
+/*__SITE_SINGLE__*/
+/*__DEFAULT_CONFIG__*/
+/*__UI__*/
+</script>
+</body>
+</html>
